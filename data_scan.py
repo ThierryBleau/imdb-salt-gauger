@@ -42,10 +42,12 @@ def preprocess(data):
 
 def kaggle_read():
     kaggle_files = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/comp-551-imbd-sentiment-classification/test")
+    kaggle_files = [x.replace('.txt', '') for x in kaggle_files]
+    kaggle_files.sort(key=int)
     kaggle_data = []
     
     for i in kaggle_files:
-        with open("/home/botond/Boti/uni/mcgill/comp551/a2/comp-551-imbd-sentiment-classification/test/"+i,"r") as f:
+        with open("/home/botond/Boti/uni/mcgill/comp551/a2/comp-551-imbd-sentiment-classification/test/"+i+".txt","r") as f:
             kaggle_data.append(f.read())        
     return kaggle_data, kaggle_files
 

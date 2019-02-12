@@ -29,13 +29,14 @@ normalizer_tranformer = Normalizer().fit(X=X_train_tfidf)
 X_train_normalized = normalizer_tranformer.transform(X_train_tfidf)
 kaggle_data_normalized = normalizer_tranformer.transform(kaggle_data_tfidf)
 
+
+
 #logistic regression
 logreg = LogisticRegression().fit(X_train_normalized, y_train)
 #prediction
 kaggle_label = logreg.predict(kaggle_data_normalized)
 #writing out the data
 #np.savetxt("submission.csv", np.column_stack((kaggle_files, kaggle_label)), delimiter=",")
-kaggle_files = [x.replace('.txt', '') for x in kaggle_files]
-kaggle_files.sort(key=int)
+
 df = pandas.DataFrame(data={"ID": kaggle_files, "Category": kaggle_label})
 df.to_csv("./file.csv", sep=',',index=False)
