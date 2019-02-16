@@ -11,18 +11,22 @@ def merge_data():
     #creater lists where each entry is a string with the whole comment
     #and another list with the same index for the postivity or negativity
     #0 is negative ! is positive
-    neg = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/neg")
-    pos = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/pos")
+    neg_files = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/neg")
+    pos_files = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/pos")
+    neg_files = [x.replace('.txt', '') for x in neg_files] #removing .txt
+    pos_files = [x.replace('.txt', '') for x in pos_files]
+    neg_files.sort(key=int) #sort the list by integer value
+    pos_files.sort(key=int)
     data = []
     data_labels = []
     
-    for i in neg:
-        with open("/home/botond/Boti/uni/mcgill/comp551/a2/neg/"+i,"r") as f:
+    for i in neg_files:
+        with open("/home/botond/Boti/uni/mcgill/comp551/a2/neg/"+i+".txt","r") as f:
             data.append(f.read())
             data_labels.append(0)
 
-    for i in pos:
-        with open("/home/botond/Boti/uni/mcgill/comp551/a2/pos/"+i,"r") as f:
+    for i in pos_files:
+        with open("/home/botond/Boti/uni/mcgill/comp551/a2/pos/"+i+".txt","r") as f:
             data.append(f.read())
             data_labels.append(1)
 
@@ -62,4 +66,11 @@ def main():
     kaggle_test, kaggle_files = kaggle_read()
     kaggle_test = preprocess(kaggle_test)
     return X_train, y_train, kaggle_test, kaggle_files
+
+def main_test():
+    data, labels = merge_data()
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, train_size=0.8, test_size=0.2)
+    X_train = preprocess(X_train)
+    X_test = preprocess(X_test)
+    return X_train, X_test, y_train, y_test
 
