@@ -12,15 +12,21 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from keras.models import Sequential
-from keras.layers import Dense, Embedding, LSTM, SpatialDropout1D
-from sklearn.model_selection import train_test_split
-from keras.utils.np_utils import to_categorical
+from keras.utils.vis_utils import plot_model
+from keras.models import Model
+from keras.layers import Input
+from keras.layers import Dense
+from keras.layers import Flatten
+from keras.layers import Dropout
+from keras.layers import Embedding
+from keras.layers.convolutional import Conv1D
+from keras.layers.convolutional import MaxPooling1D
+from keras.layers.merge import concatenate
 
 path = r'%s' % os.getcwd().replace('\\','/')
 filepaths = [path+"/train/pos/", path+"/train/neg/"]
 jsonpath = path+"/training_dataframe.json"
-jsonbigram = path+"/bigram.json"
+jsonlemmas = path+"/lemmas.json"
 english_stop_words = set(stopwords.words('english'))
 #print(filepaths)
 #print(jsonpath)
@@ -55,7 +61,7 @@ def lemmatize_text(text):
     return lemmatized_text
 
 def df_lemmatize(df):
-    df['lemmatized']= df.apply(lambda row: lemmatize_text(row['no stopwords']),axis = 1)
+    df['lemmatized']= df.apply(lambda row: ' '.join(lemmatize_text(row['no stopwords'])),axis = 1)
     return(df)
 
 def ngramize_text(list_of_words):
@@ -72,7 +78,7 @@ def feature_extraction(df):
     X, y = df.loc[:,df.columns != 'sentiment'], df['sentiment']
     X = df_no_stopwords(X)
     X = df_lemmatize(X)
-    X = df_ngramize(X)
+    #X = df_ngramize(X)
     return X,y
 
 def kfold(X,y,fold_number):
@@ -85,42 +91,96 @@ def kfold(X,y,fold_number):
         
     return indices
 
-def model(X,Y):
-    embed_dim = 128
-    lstm_out = 196
+# fit a tokenizer
+def create_tokenizer(lines):
+	tokenizer = Tokenizer()
+	tokenizer.fit_on_texts(lines)
+	return tokenizer
+ 
+# calculate the maximum document length
+def max_length(lines):
+	return max([len(s.split()) for s in lines])
+ 
+# encode a list of lines
+def encode_text(tokenizer, lines, length):
+	# integer encode
+	encoded = tokenizer.texts_to_sequences(lines)
+	# pad encoded sequences
+	padded = pad_sequences(encoded, maxlen=length, padding='post')
+	return padded
 
-    model = Sequential()
-    model.add(Embedding(2000, embed_dim,input_length = X.shape[1]))
-    model.add(SpatialDropout1D(0.4))
-    model.add(LSTM(lstm_out, dropout=0.2, recurrent_dropout=0.2))
-    model.add(Dense(2,activation='softmax'))
-    model.compile(loss = 'categorical_crossentropy', optimizer='adam',metrics = ['accuracy'])
+def alphabetize(lemmas):
+    new_lemmas = []
+    for lemma in lemmas:
+        new_lemma = [word for word in lemma.split(' ') if word.isalpha()]
+        new_lemma = ' '.join(new_lemma)
+        new_lemmas.append(new_lemma)
+    return new_lemmas
 
-    print(model.summary())
-    batch_size = 32
-    X_train, X_test, Y_train, Y_test = train_test_split(X,Y, test_size = 0.33, random_state = 42)
-    batch_size = 32
-    model.fit(X_train, Y_train, epochs = 7, batch_size=batch_size, verbose = 2)
-
-    validation_size = 1500
-
-    X_validate = X_test[-validation_size:]
-    Y_validate = Y_test[-validation_size:]
-    X_test = X_test[:-validation_size]
-    Y_test = Y_test[:-validation_size]
-    score,acc = model.evaluate(X_test, Y_test, verbose = 2, batch_size = batch_size)
-    print("score: %.2f" % (score))
-    print("acc: %.2f" % (acc))
-    return model.summary()
+def model(length, vocab_size):
+    # channel 1
+	inputs1 = Input(shape=(length,))
+	embedding1 = Embedding(vocab_size, 100)(inputs1)
+	conv1 = Conv1D(filters=32, kernel_size=4, activation='relu')(embedding1)
+	drop1 = Dropout(0.5)(conv1)
+	pool1 = MaxPooling1D(pool_size=2)(drop1)
+	flat1 = Flatten()(pool1)
+	# channel 2
+	inputs2 = Input(shape=(length,))
+	embedding2 = Embedding(vocab_size, 100)(inputs2)
+	conv2 = Conv1D(filters=32, kernel_size=6, activation='relu')(embedding2)
+	drop2 = Dropout(0.5)(conv2)
+	pool2 = MaxPooling1D(pool_size=2)(drop2)
+	flat2 = Flatten()(pool2)
+	# channel 3
+	inputs3 = Input(shape=(length,))
+	embedding3 = Embedding(vocab_size, 100)(inputs3)
+	conv3 = Conv1D(filters=32, kernel_size=8, activation='relu')(embedding3)
+	drop3 = Dropout(0.5)(conv3)
+	pool3 = MaxPooling1D(pool_size=2)(drop3)
+	flat3 = Flatten()(pool3)
+	# merge
+	merged = concatenate([flat1, flat2, flat3])
+	# interpretation
+	dense1 = Dense(10, activation='relu')(merged)
+	outputs = Dense(1, activation='sigmoid')(dense1)
+	model = Model(inputs=[inputs1, inputs2, inputs3], outputs=outputs)
+	# compile
+	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+	# summarize
+	print(model.summary())
+	#plot_model(model, show_shapes=True, to_file='multichannel.png')
+	return model
 
 #dataframe_from_folder(filepaths)
 #kfold(dataframe_from_json(jsonpath), 4)
 #df,sentiments = feature_extraction(dataframe_from_json(jsonpath))
-#df = df['bigramized']
+#df = df['lemmatized']
 #print(df)
 #print(sentiments)
 #df = df.to_frame().join(sentiments.to_frame())
 #print(df)
-#save_dataframe(df,jsonbigram)
-bigram = dataframe_from_json(jsonbigram)
-model(bigram['bigramized'],bigram['sentiment'])
+#save_dataframe(df,jsonlemmas)
+lemmas = dataframe_from_json(jsonlemmas)
+#print(lemmas['lemmatized'].shape)
+#model(lemmas['lemmatized'].to_frame(),lemmas['sentiment'].to_frame())
+trainLines, trainLabels = lemmas['lemmatized'].values.tolist(), lemmas['sentiment'].values.tolist()
+trainLines = alphabetize(trainLines)
+
+tokenizer = create_tokenizer(trainLines)
+# calculate max document length
+length = max_length(trainLines)
+# calculate vocabulary size
+vocab_size = len(tokenizer.word_index) + 1
+print('Max document length: %d' % length)
+print('Vocabulary size: %d' % vocab_size)
+# encode data
+trainX = encode_text(tokenizer, trainLines, length)
+print(trainX.shape)
+ 
+# define model
+model = model(length, vocab_size)
+# fit model
+model.fit([trainX,trainX,trainX], trainLabels, epochs=1, batch_size=16)
+# save the model
+model.save('model.h5')
