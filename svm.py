@@ -10,12 +10,5 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import KFold
 import data_scan_pandas
 
-
-def kfold():
-    return
-
-def kfold_test():
-    return
-
-def get_kaggle_predictions():
-    return
+X_train, y_train, kaggle_data, kaggle_files = data_scan.main()
+kaggle_label = []
