@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import json
 import os
+from os import listdir
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
 from sklearn import svm
@@ -10,9 +11,9 @@ from sklearn.model_selection import KFold
 import data_scan_pandas
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from keras.models import load_model
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from keras.utils.vis_utils import plot_model
 from keras.models import Model
 from keras.layers import Input
 from keras.layers import Dense
@@ -27,10 +28,12 @@ path = r'%s' % os.getcwd().replace('\\','/')
 filepaths = [path+"/train/pos/", path+"/train/neg/"]
 jsonpath = path+"/training_dataframe.json"
 jsonlemmas = path+"/lemmas.json"
+jsontest = path+"/test.json"
 english_stop_words = set(stopwords.words('english'))
 #print(filepaths)
 #print(jsonpath)
-
+test = []
+labels = []
 def dataframe_from_json(path):
     df = pd.read_json(path, orient='records')
     return df
@@ -40,7 +43,10 @@ def save_dataframe(df,path):
     return
 
 def dataframe_from_folder(paths):
-    text ,sentiment = data_scan_pandas.merge_data(paths)
+    text ,sentiment , test, labels= data_scan_pandas.merge_data(paths)
+    test = zip(test,labels)
+    testframe = pd.DataFrame.from_records(test, columns = ['text','sentiment'])
+    testframe.to_json(jsontest)
     processed_text = data_scan_pandas.preprocess(text)
     data = zip(processed_text,sentiment)
     dataframe = pd.DataFrame.from_records(data, columns=['text', 'sentiment'])
@@ -117,6 +123,7 @@ def alphabetize(lemmas):
         new_lemmas.append(new_lemma)
     return new_lemmas
 
+
 def model(length, vocab_size):
     # channel 1
 	inputs1 = Input(shape=(length,))
@@ -152,20 +159,32 @@ def model(length, vocab_size):
 	#plot_model(model, show_shapes=True, to_file='multichannel.png')
 	return model
 
-#dataframe_from_folder(filepaths)
+'''
+dataframe_from_folder(filepaths)
 #kfold(dataframe_from_json(jsonpath), 4)
-#df,sentiments = feature_extraction(dataframe_from_json(jsonpath))
-#df = df['lemmatized']
-#print(df)
+df,sentiments = feature_extraction(dataframe_from_json(jsonpath))
+df = df['lemmatized']
+print(df.shape)
 #print(sentiments)
-#df = df.to_frame().join(sentiments.to_frame())
-#print(df)
-#save_dataframe(df,jsonlemmas)
+df = df.to_frame().join(sentiments.to_frame())
+print(df.shape)
+save_dataframe(df,jsonlemmas)
+'''
+'''
 lemmas = dataframe_from_json(jsonlemmas)
+print(lemmas.shape)
+test = dataframe_from_json(jsontest)
+print(test.shape)
 #print(lemmas['lemmatized'].shape)
 #model(lemmas['lemmatized'].to_frame(),lemmas['sentiment'].to_frame())
 trainLines, trainLabels = lemmas['lemmatized'].values.tolist(), lemmas['sentiment'].values.tolist()
 trainLines = alphabetize(trainLines)
+testLines , testLabels = test['text'].values.tolist(), test['sentiment'].values.tolist()
+testLines = alphabetize(testLines)
+#print(testLines,testLabels)
+print(lemmas)
+print(test)
+
 
 tokenizer = create_tokenizer(trainLines)
 # calculate max document length
@@ -176,11 +195,55 @@ print('Max document length: %d' % length)
 print('Vocabulary size: %d' % vocab_size)
 # encode data
 trainX = encode_text(tokenizer, trainLines, length)
-print(trainX.shape)
+testX = encode_text(tokenizer, testLines, length)
+#print(trainX.shape)
  
 # define model
 model = model(length, vocab_size)
 # fit model
-model.fit([trainX,trainX,trainX], trainLabels, epochs=1, batch_size=16)
+model.fit([trainX,trainX,trainX], np.array(trainLabels), epochs=5, batch_size=16)
 # save the model
-model.save('model.h5')
+model.save('kaggle_model')
+
+# evaluate model on training dataset
+loss, acc = model.evaluate([trainX,trainX,trainX],np.array(trainLabels), verbose=0)
+print('Train Accuracy: %f' % (acc*100))
+ 
+# evaluate model on test dataset dataset
+loss, acc = model.evaluate([testX,testX,testX],np.array(testLabels), verbose=0)
+print('Test Accuracy: %f' % (acc*100))
+
+'''
+def kaggle_read():
+    kaggle_files = listdir(path+"/test")
+    kaggle_files = [x.replace('.txt', '') for x in kaggle_files]
+    kaggle_files.sort(key=int)
+    kaggle_data = []
+    
+    for i in kaggle_files:
+        with open(path+"/test/"+i+".txt","r",encoding='utf8') as f:
+            kaggle_data.append(f.read())        
+    return kaggle_data, kaggle_files
+
+kaggle_test, kaggle_files = kaggle_read()
+kaggle_test = alphabetize(kaggle_test)
+
+tokenizer = create_tokenizer(kaggle_test)
+length = max_length(kaggle_test)
+kaggle_test = encode_text(tokenizer, kaggle_test, 1433)
+
+print(kaggle_test[0])
+model = load_model('kaggle_model')
+
+kaggle_test = np.array(kaggle_test)
+predictions = model.predict([kaggle_test,kaggle_test,kaggle_test], batch_size = 16, verbose = 1)
+
+
+predictions[predictions > 0.5]= 1
+predictions[predictions <= 0.5] = 0
+print(predictions.shape)
+data = zip(kaggle_files,list(predictions.flat))
+df = pd.DataFrame.from_records(data, columns=['ID','Classes'])
+print(df)
+df.to_csv("./file.csv", sep=',',index=False)
+

@@ -1,4 +1,5 @@
 from os import listdir
+import cross_validation
 import pandas as pd
 import re
 from sklearn.model_selection import train_test_split
@@ -7,6 +8,8 @@ from sklearn.model_selection import train_test_split
 #NOTE now we have X_train, X_test, kaggle_test
 #NOTE X data has no special characters, just words seperated by space
 #NOTE Y data only has 0s and 1s for negative and positive
+
+path = cross_validation.path
 
 def merge_data(paths):
     #creater lists where each entry is a string with the whole comment
@@ -22,18 +25,29 @@ def merge_data(paths):
     pos_files.sort(key=int)
     data = []
     data_labels = []
+    test_set = []
+    test_labels =[]
+
     
     for i in neg_files:
         with open(negpath+i+".txt","r",encoding='utf8') as f:
-            data.append(f.read())
-            data_labels.append(0)
+            if neg_files.index(i) >= 12000:
+                test_set.append(f.read())
+                test_labels.append(0)
+            else:    
+                data.append(f.read())
+                data_labels.append(0)
 
     for i in pos_files:
         with open(pospath+i+".txt","r",encoding='utf8') as f:
-            data.append(f.read())
-            data_labels.append(1)
+            if pos_files.index(i) >= 12000:
+                test_set.append(f.read())
+                test_labels.append(1)
+            else:    
+                data.append(f.read())
+                data_labels.append(1)
 
-    return data, data_labels
+    return data, data_labels , test_set , test_labels
 
 #removing .!?/
 #removing new line characters
@@ -48,13 +62,13 @@ def preprocess(data):
     return data
 
 def kaggle_read():
-    kaggle_files = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/comp-551-imbd-sentiment-classification/test")
+    kaggle_files = listdir(path+"/test")
     kaggle_files = [x.replace('.txt', '') for x in kaggle_files]
     kaggle_files.sort(key=int)
     kaggle_data = []
     
     for i in kaggle_files:
-        with open("/home/botond/Boti/uni/mcgill/comp551/a2/comp-551-imbd-sentiment-classification/test/"+i+".txt","r") as f:
+        with open(path+"/test/"+i+".txt","r") as f:
             kaggle_data.append(f.read())        
     return kaggle_data, kaggle_files
 
