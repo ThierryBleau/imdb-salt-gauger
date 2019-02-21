@@ -248,15 +248,15 @@ def kaggle_predictions():
     predictions = model.predict([kaggle_test,kaggle_test,kaggle_test], batch_size = 16, verbose = 1)
 
 
-    predictions[predictions > 0.5]= 1
-    predictions[predictions <= 0.5] = 0
+    predictions[predictions > 0.5]= int(1)
+    predictions[predictions <= 0.5] = int(0)
     print(predictions.shape)
     data = zip(kaggle_files,list(predictions.flat))
     df = pd.DataFrame.from_records(data, columns=['ID','Category'])
     print(df)
-    df.to_csv("./file.csv", sep=',',index=False)
+    df.to_csv("./submission.csv", sep=',',index=False)
     return df
 
 #trainLines, trainLabels, testLines, testLabels = get_data_from_json()
 #validate(trainLines, trainLabels, testLines, testLabels)
-print(kaggle_predictions())
+#print(kaggle_predictions())

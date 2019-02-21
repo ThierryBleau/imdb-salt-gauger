@@ -1,5 +1,5 @@
 from os import listdir
-import cross_validation
+import cnn_model
 import pandas as pd
 import re
 from sklearn.model_selection import train_test_split
@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 #NOTE X data has no special characters, just words seperated by space
 #NOTE Y data only has 0s and 1s for negative and positive
 
-path = cross_validation.path
+path = cnn_model.path
 
 def merge_data(paths):
     #creater lists where each entry is a string with the whole comment
@@ -48,6 +48,34 @@ def merge_data(paths):
                 data_labels.append(1)
 
     return data, data_labels , test_set , test_labels
+
+def merge_data_no_test(paths):
+    #creater lists where each entry is a string with the whole comment
+    #and another list with the same index for the postivity or negativity
+    #0 is negative ! is positive
+    pospath = paths[0]
+    negpath = paths[1]
+    neg_files = listdir(negpath)
+    pos_files = listdir(pospath)
+    neg_files = [x.replace('.txt', '') for x in neg_files] #removing .txt
+    pos_files = [x.replace('.txt', '') for x in pos_files]
+    neg_files.sort(key=int) #sort the list by integer value
+    pos_files.sort(key=int)
+    data = []
+    data_labels = []
+    
+    for i in neg_files:
+        with open(negpath+i+".txt","r",encoding='utf8') as f:
+            
+            data.append(f.read())
+            data_labels.append(0)
+
+    for i in pos_files:
+        with open(pospath+i+".txt","r",encoding='utf8') as f:
+            data.append(f.read())
+            data_labels.append(1)
+
+    return data, data_labels
 
 #removing .!?/
 #removing new line characters
