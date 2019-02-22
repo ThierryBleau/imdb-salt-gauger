@@ -1,6 +1,8 @@
 from os import listdir
 import re
 from sklearn.model_selection import train_test_split
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 
 #NOTE are going to use this function to scan the train and test data
 #NOTE now we have X_train, X_test, kaggle_test
@@ -36,7 +38,7 @@ def merge_data():
 #removing new line characters
 #https://towardsdatascience.com/sentiment-analysis-with-python-part-1-5ce197074184
 
-REPLACE_NO_SPACE = re.compile("(\.)|(\;)|(\:)|(\!)|(\')|(\?)|(\,)|(\")|(\()|(\))|(\[)|(\])")
+REPLACE_NO_SPACE = re.compile("(\.)|(\;)|(\:)|(\')|(\?)|(\,)|(\")|(\()|(\))|(\[)|(\])")
 REPLACE_WITH_SPACE = re.compile("(<br\s*/><br\s*/>)|(\-)|(\/)")
 
 def preprocess(data):
@@ -69,7 +71,12 @@ def main():
 
 def main_test():
     data, labels = merge_data()
+
+    # lemmatizer = WordNetLemmatizer()
+    # lemmatized_text = [lemmatizer.lemmatize(word) for word in data]
+
     X_train, X_test, y_train, y_test = train_test_split(data, labels, train_size=0.8, test_size=0.2)
+    
     X_train = preprocess(X_train)
     X_test = preprocess(X_test)
     return X_train, X_test, y_train, y_test
