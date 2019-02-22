@@ -7,8 +7,8 @@ analyser = SentimentIntensityAnalyzer()
 
 def sentiment_analyzer_scores(sentence):
     score = analyser.polarity_scores(sentence)
-    print("{:-<40} {}".format(sentence, str(score)))
-    return
+    score = (score['compound']+1) /2
+    return score
 
 def vader(data):
     vader_score=[]
