@@ -33,16 +33,16 @@ y_pred_proba = sgd.predict_proba(X_test_normalized)
 
 for i in range(0,len(y_pred_proba)):
     y_pred_vader = []
-    if (y_pred_proba[i][1] + vader_test[i]) / 2 > 0.5:
+    if ((y_pred_proba[1][i] + vader_test[i]) / 2) > 0.5:
         y_pred_vader.append(1)
     else:
         y_pred_vader.append(0)
 
 counter=0
 for i in range(0,len(y_pred_vader)):
-    if y_pred_normal[i]!=y_pred_vader[i]:
+    if y_test[i]!=y_pred_vader[i]:
         counter = counter + 1
-avg = (len(y_pred_normal)-counter) / len(y_pred_normal)
+avg = (len(y_test)-counter) / len(y_test)
 print(avg)
 print(metrics.classification_report(y_test, y_pred_normal))
 
