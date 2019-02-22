@@ -30,20 +30,19 @@ X_test_normalized = normalizer_tranformer.transform(X_test_tfidf)
 sgd = SGDClassifier(loss='log').fit(X_train_normalized, y_train)
 y_pred_normal = sgd.predict(X_test_normalized)
 y_pred_proba = sgd.predict_proba(X_test_normalized)
-print(y_pred_normal.classes_)
-print(y_pred_proba)
-# for i in range(0,len(y_pred_proba)):
-#     y_pred_vader = []
-#     if (y_pred_proba[i] + vader_test[i]) / 2 > 0.5:
-#         y_pred_vader.append(1)
-#     else:
-#         y_pred_vader.append(0)
 
-# counter=0
-# for i in range(0,len(y_pred_vader)):
-#     if y_pred_normal[i]!=y_pred_vader[i]:
-#         counter = counter + 1
-# avg = (len(y_pred_normal)-counter) / len(y_pred_normal)
-# print(avg)
-print(metrics.classification_report(y_test, y_pred))
+for i in range(0,len(y_pred_proba)):
+    y_pred_vader = []
+    if (y_pred_proba[i][1] + vader_test[i]) / 2 > 0.5:
+        y_pred_vader.append(1)
+    else:
+        y_pred_vader.append(0)
+
+counter=0
+for i in range(0,len(y_pred_vader)):
+    if y_pred_normal[i]!=y_pred_vader[i]:
+        counter = counter + 1
+avg = (len(y_pred_normal)-counter) / len(y_pred_normal)
+print(avg)
+print(metrics.classification_report(y_test, y_pred_normal))
 
