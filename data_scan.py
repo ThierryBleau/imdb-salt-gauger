@@ -38,7 +38,7 @@ def merge_data():
 #removing new line characters
 #https://towardsdatascience.com/sentiment-analysis-with-python-part-1-5ce197074184
 
-REPLACE_NO_SPACE = re.compile("(\.)|(\;)|(\:)|(\')|(\?)|(\,)|(\")|(\()|(\))|(\[)|(\])")
+REPLACE_NO_SPACE = re.compile("(\.)|(\;)|(\:)|(\')|(\?)|(\,)|(\")|(\!)(\()|(\))|(\[)|(\])")
 REPLACE_WITH_SPACE = re.compile("(<br\s*/><br\s*/>)|(\-)|(\/)")
 
 def preprocess(data):
