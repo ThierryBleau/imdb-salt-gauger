@@ -7,7 +7,7 @@ analyser = SentimentIntensityAnalyzer()
 
 def sentiment_analyzer_scores(sentence):
     score = analyser.polarity_scores(sentence)
-    score = (score['compound']+1) /2
+    score = 1 + (score['neg'])
     return score
 
 def vader(data):
