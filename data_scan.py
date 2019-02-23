@@ -13,8 +13,8 @@ def merge_data():
     #creater lists where each entry is a string with the whole comment
     #and another list with the same index for the postivity or negativity
     #0 is negative ! is positive
-    neg_files = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/neg")
-    pos_files = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/pos")
+    neg_files = listdir("./train/neg")
+    pos_files = listdir("./train/pos")
     neg_files = [x.replace('.txt', '') for x in neg_files] #removing .txt
     pos_files = [x.replace('.txt', '') for x in pos_files]
     neg_files.sort(key=int) #sort the list by integer value
@@ -23,12 +23,12 @@ def merge_data():
     data_labels = []
     
     for i in neg_files:
-        with open("/home/botond/Boti/uni/mcgill/comp551/a2/neg/"+i+".txt","r") as f:
+        with open("./train/neg/"+i+".txt","r", encoding= 'utf8') as f:
             data.append(f.read())
             data_labels.append(0)
 
     for i in pos_files:
-        with open("/home/botond/Boti/uni/mcgill/comp551/a2/pos/"+i+".txt","r") as f:
+        with open("./train/pos/"+i+".txt","r", encoding= 'utf8') as f:
             data.append(f.read())
             data_labels.append(1)
 
@@ -47,13 +47,13 @@ def preprocess(data):
     return data
 
 def kaggle_read():
-    kaggle_files = listdir("/home/botond/Boti/uni/mcgill/comp551/a2/comp-551-imbd-sentiment-classification/test")
+    kaggle_files = listdir("./test")
     kaggle_files = [x.replace('.txt', '') for x in kaggle_files]
     kaggle_files.sort(key=int)
     kaggle_data = []
     
     for i in kaggle_files:
-        with open("/home/botond/Boti/uni/mcgill/comp551/a2/comp-551-imbd-sentiment-classification/test/"+i+".txt","r") as f:
+        with open("./test/"+i+".txt","r", encoding= 'utf8') as f:
             kaggle_data.append(f.read())        
     return kaggle_data, kaggle_files
 
